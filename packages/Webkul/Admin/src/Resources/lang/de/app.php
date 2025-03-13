@@ -3864,6 +3864,7 @@ return [
                     'paypal-smart-button-info'       => 'PayPal Smart Button: Vereinfacht Online-Zahlungen mit anpassbaren Schaltflächen für sichere, mehrstufige Transaktionen auf Websites und Apps.',
                     'paypal-standard'                => 'PayPal Standard',
                     'paypal-standard-info'           => 'PayPal Standard ist eine grundlegende PayPal-Zahlungsoption für Online-Unternehmen, mit der Kunden mit ihrem PayPal-Konto oder Kredit-/Debitkarten bezahlen können.',
+                    'mercadopago'                    => 'mercadopago',
                     'pending'                        => 'Ausstehend',
                     'pending-payment'                => 'Ausstehende Zahlung',
                     'processing'                     => 'In Bearbeitung',

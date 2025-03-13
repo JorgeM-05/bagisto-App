@@ -3864,6 +3864,8 @@ return [
                     'paypal-smart-button-info'       => 'Botón inteligente de PayPal: simplifica los pagos en línea con botones personalizables para transacciones seguras y multimétodo en sitios web y aplicaciones.',
                     'paypal-standard'                => 'PayPal estándar',
                     'paypal-standard-info'           => 'PayPal estándar es una opción de pago básica de PayPal para negocios en línea, que permite a los clientes pagar con sus cuentas de PayPal o tarjetas de crédito/débito.',
+                    'mercadopago'                    => 'mercadopago',
+                    'mercadopago-info'               => 'mercadopago es una opción de pago básica de para negocios en línea, que permite a los clientes pagar con sus cuentas de mercadopago o tarjetas de crédito/débito.',
                     'pending'                        => 'Pendiente',
                     'pending-payment'                => 'Pago pendiente',
                     'processing'                     => 'Procesando',
