@@ -15,8 +15,10 @@ Route::group(['middleware' => ['web']], function () {
         Route::get('/create-order', [SmartButtonController::class, 'createOrder'])->name('mercadopago.smart-button.create-order');
         Route::post('/capture-order', [SmartButtonController::class, 'captureOrder'])->name('mercadopago.smart-button.capture-order');
     });
-});
 
-Route::post('mercadopago/standard/ipn', [StandardController::class, 'ipn'])
+    Route::post('mercadopago/standard/ipn', [StandardController::class, 'ipn'])
     ->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class)
     ->name('mercadopago.standard.ipn');
+});
+
+

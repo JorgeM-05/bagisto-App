@@ -10,8 +10,6 @@ class EventServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap services.
-     *
-     * @return void
      */
     public function boot()
     {
@@ -19,6 +17,7 @@ class EventServiceProvider extends ServiceProvider
             $viewRenderEventManager->addTemplate('mercadopago::checkout.onepage.mercadopago-smart-button');
         });
 
+        // Guardar transacción después de la generación de la factura
         Event::listen('sales.invoice.save.after', 'Webkul\MercadoPago\Listeners\Transaction@saveTransaction');
     }
 }

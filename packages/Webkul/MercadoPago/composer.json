@@ -1,8 +1,7 @@
 {
     "name": "webkul/mercadopago",
-    "description": "Mercado Pago Payment Gateway for Bagisto",
-    "type": "bagisto-payment",
     "license": "MIT",
+    "require": {},
     "autoload": {
         "psr-4": {
             "Webkul\\MercadoPago\\": "src/"
@@ -12,9 +11,9 @@
         "laravel": {
             "providers": [
                 "Webkul\\MercadoPago\\Providers\\MercadoPagoServiceProvider"
-            ]
+            ],
+            "aliases": {}
         }
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+    "minimum-stability": "dev"
 }

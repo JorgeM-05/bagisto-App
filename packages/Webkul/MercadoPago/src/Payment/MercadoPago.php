@@ -8,7 +8,7 @@ use Webkul\Payment\Payment\Payment;
 abstract class MercadoPago extends Payment
 {
     /**
-     * Payment method code.
+     * Código del método de pago.
      *
      * @var string
      */
@@ -23,20 +23,19 @@ abstract class MercadoPago extends Payment
     }
 
     /**
-     * Initialize MercadoPago SDK with credentials.
+     * Inicializa el SDK de MercadoPago con credenciales.
      *
      * @return void
+     * @throws \Exception
      */
     protected function initialize()
     {
-        MercadoPagoConfig::setAccessToken('TEST-ACCESS-TOKEN'); // 🔹 Reemplaza con un token de prueba
+        $accessToken = core()->getConfigData('sales.paymentmethods.mercadopago.client_secret');
 
-        // $accessToken = $this->getConfigData('access_token');
+        if (empty($accessToken)) {
+            throw new \Exception("MercadoPago: El token de acceso no está configurado en la administración de Bagisto.");
+        }
 
-        // if (empty($accessToken)) {
-        //     throw new \Exception("MercadoPago: Access token is missing in configuration.");
-        // }
-
-        // MercadoPagoConfig::setAccessToken($accessToken);
+        MercadoPagoConfig::setAccessToken($accessToken);
     }
 }

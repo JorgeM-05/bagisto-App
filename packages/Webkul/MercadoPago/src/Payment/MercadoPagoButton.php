@@ -2,119 +2,117 @@
 
 namespace Webkul\MercadoPago\Payment;
 
-use MercadoPago\MercadoPagoConfig;
-use MercadoPago\Client\Preference;
-use MercadoPago\Client\Payment;
-use MercadoPago\MercadoPagoClient;
+use MercadoPago\Client\Preference\PreferenceClient;
+use MercadoPago\Client\Payment\PaymentClient;
 
 class MercadoPagoButton extends MercadoPago
 {
     /**
-     * Payment method code.
+     * Código del método de pago.
      *
      * @var string
      */
     protected $code = 'mercadopago_smart_button';
 
     /**
-     * MercadoPago Partner Attribution ID.
+     * ID de atribución de MercadoPago para Bagisto.
      *
      * @var string
      */
     protected $mercadoPagoPartnerAttributionId = 'Bagisto_Cart';
 
     /**
-     * Constructor.
-     */
-    public function __construct()
-    {
-        $this->initialize();
-    }
-
-    /**
-     * Create order for approval of client.
+     * Crea una orden de pago en MercadoPago.
      *
      * @param  array  $body
      * @return object
+     * @throws \Exception
      */
     public function createOrder($body)
     {
-        $preferenceClient = new Preference();
-        $preference = $preferenceClient->create([
-            'items' => $body['items'],
-            'payer' => $body['payer'],
-            'back_urls' => [
-                "success" => route('mercadopago.smart-button.success'),
-                "failure" => route('mercadopago.smart-button.failure'),
-                "pending" => route('mercadopago.smart-button.pending')
-            ],
-            'auto_return' => "approved"
-        ]);
+        try {
+            $preferenceClient = new PreferenceClient();
+            $preference = $preferenceClient->create([
+                'items' => $body['items'],
+                'payer' => $body['payer'],
+                'back_urls' => [
+                    "success" => route('mercadopago.smart-button.success'),
+                    "failure" => route('mercadopago.smart-button.failure'),
+                    "pending" => route('mercadopago.smart-button.pending')
+                ],
+                'auto_return' => "approved"
+            ]);
 
-        return $preference;
+            return $preference;
+        } catch (\Exception $e) {
+            throw new \Exception("Error al crear la orden en MercadoPago: " . $e->getMessage());
+        }
     }
 
     /**
-     * Capture payment after approval.
+     * Captura el pago después de la aprobación.
      *
      * @param  string  $paymentId
      * @return object
+     * @throws \Exception
      */
     public function captureOrder($paymentId)
     {
-        $paymentClient = new Payment();
-        $payment = $paymentClient->get($paymentId);
+        try {
+            $paymentClient = new PaymentClient();
+            $payment = $paymentClient->get($paymentId);
 
-        if ($payment) {
-            $paymentClient->update($paymentId, ['capture' => true]);
+            if ($payment && $payment->status === 'approved') {
+                $paymentClient->update($paymentId, ['capture' => true]);
+            }
+
+            return $payment;
+        } catch (\Exception $e) {
+            throw new \Exception("Error al capturar la orden: " . $e->getMessage());
         }
-
-        return $payment;
     }
 
     /**
-     * Get order details.
+     * Obtiene los detalles de una orden.
      *
      * @param  string  $paymentId
      * @return object
+     * @throws \Exception
      */
     public function getOrder($paymentId)
     {
-        $paymentClient = new Payment();
-        return $paymentClient->get($paymentId);
+        try {
+            $paymentClient = new PaymentClient();
+            return $paymentClient->get($paymentId);
+        } catch (\Exception $e) {
+            throw new \Exception("Error al obtener la orden: " . $e->getMessage());
+        }
     }
 
     /**
-     * Refund order.
+     * Reembolsa una orden.
      *
      * @param  string  $paymentId
      * @return object
+     * @throws \Exception
      */
     public function refundOrder($paymentId)
     {
-        $paymentClient = new Payment();
-        return $paymentClient->refund($paymentId);
+        try {
+            $paymentClient = new PaymentClient();
+            return $paymentClient->refund($paymentId);
+        } catch (\Exception $e) {
+            throw new \Exception("Error al reembolsar la orden: " . $e->getMessage());
+        }
     }
 
     /**
-     * Return MercadoPago redirect URL.
+     * Retorna la URL de redirección de MercadoPago.
      *
      * @return string
      */
     public function getRedirectUrl()
     {
         return route('mercadopago.smart-button.redirect');
-    }
-
-    /**
-     * Initialize MercadoPago SDK with credentials.
-     *
-     * @return void
-     */
-    protected function initialize()
-    {
-        MercadoPagoConfig::setAccessToken('TEST-ACCESS-TOKEN'); // 🔹 Reemplaza con un token de prueba
-
-        // MercadoPagoConfig::setAccessToken($this->getConfigData('access_token'));
     }
 }

@@ -5,12 +5,13 @@ namespace Webkul\MercadoPago\Helpers;
 use Webkul\MercadoPago\Payment\MercadoPago;
 use Webkul\Sales\Repositories\InvoiceRepository;
 use Webkul\Sales\Repositories\OrderRepository;
-use Illuminate\Support\Facades\Http;
+use MercadoPago\Client\Payment\PaymentClient;
+use Illuminate\Support\Facades\Log;
 
 class MercadoPagoHelper
 {
     /**
-     * Create a new helper instance.
+     * Constructor.
      */
     public function __construct(
         protected MercadoPago $mercadoPago,
@@ -35,12 +36,14 @@ class MercadoPagoHelper
         $paymentData = $this->getPaymentData($paymentId);
 
         if (!$paymentData || !isset($paymentData['status'], $paymentData['external_reference'])) {
+            Log::error("MercadoPago: No se pudo obtener información del pago con ID {$paymentId}");
             return;
         }
 
         $order = $this->orderRepository->findOneByField(['id' => $paymentData['external_reference']]);
 
         if (!$order) {
+            Log::error("MercadoPago: No se encontró la orden con ID {$paymentData['external_reference']}");
             return;
         }
 
@@ -48,19 +51,28 @@ class MercadoPagoHelper
     }
 
     /**
-     * Obtiene los datos del pago desde Mercado Pago.
+     * Obtiene los datos del pago desde Mercado Pago utilizando el SDK.
      *
      * @param  int  $paymentId
      * @return array|null
      */
     protected function getPaymentData(int $paymentId)
     {
-        $accessToken = config('payment_methods.mercadopago.client_secret');
+        try {
+            $accessToken = core()->getConfigData('sales.paymentmethods.mercadopago.access_token');
 
-        $response = Http::withToken($accessToken)
-            ->get("https://api.mercadopago.com/v1/payments/{$paymentId}");
+            if (empty($accessToken)) {
+                throw new \Exception("El Access Token de MercadoPago no está configurado.");
+            }
 
-        return $response->successful() ? $response->json() : null;
+            $paymentClient = new PaymentClient();
+            $payment = $paymentClient->get($paymentId);
+
+            return $payment ? (array) $payment : null;
+        } catch (\Exception $e) {
+            Log::error("MercadoPago: Error al obtener los datos del pago - " . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -72,17 +84,21 @@ class MercadoPagoHelper
      */
     protected function processOrder($order, array $paymentData)
     {
-        if ($paymentData['status'] === 'approved') {
-            $this->orderRepository->update(['status' => 'processing'], $order->id);
+        try {
+            if ($paymentData['status'] === 'approved') {
+                $this->orderRepository->update(['status' => 'processing'], $order->id);
 
-            if ($order->canInvoice()) {
-                $invoice = $this->invoiceRepository->create([
-                    'order_id' => $order->id,
-                    'invoice' => [
-                        'items' => $this->prepareInvoiceData($order)
-                    ]
-                ]);
+                if ($order->canInvoice()) {
+                    $this->invoiceRepository->create([
+                        'order_id' => $order->id,
+                        'invoice' => [
+                            'items' => $this->prepareInvoiceData($order)
+                        ]
+                    ]);
+                }
             }
+        } catch (\Exception $e) {
+            Log::error("MercadoPago: Error al procesar la orden {$order->id} - " . $e->getMessage());
         }
     }
 

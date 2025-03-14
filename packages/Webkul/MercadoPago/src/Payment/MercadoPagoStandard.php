@@ -5,14 +5,14 @@ namespace Webkul\MercadoPago\Payment;
 class MercadoPagoStandard extends MercadoPago
 {
     /**
-     * Payment method code.
+     * Código del método de pago.
      *
      * @var string
      */
     protected $code = 'mercadopago_standard';
 
     /**
-     * Return MercadoPago redirect URL.
+     * Retorna la URL de redirección de MercadoPago.
      *
      * @return string
      */
@@ -22,7 +22,7 @@ class MercadoPagoStandard extends MercadoPago
     }
 
     /**
-     * Return MercadoPago IPN URL.
+     * Retorna la URL de notificación IPN de MercadoPago.
      *
      * @return string
      */
@@ -32,7 +32,7 @@ class MercadoPagoStandard extends MercadoPago
     }
 
     /**
-     * Return form field array for MercadoPago checkout.
+     * Retorna los campos del formulario para el checkout de MercadoPago.
      *
      * @return array
      */
@@ -40,8 +40,10 @@ class MercadoPagoStandard extends MercadoPago
     {
         $cart = $this->getCart();
 
-        $fields = [
-            'transaction_amount' => $cart->sub_total + $cart->tax_total + ($cart->selected_shipping_rate ? $cart->selected_shipping_rate->price : 0) - $cart->discount_amount,
+        return [
+            'transaction_amount' => $cart->sub_total + $cart->tax_total + 
+                                    ($cart->selected_shipping_rate ? $cart->selected_shipping_rate->price : 0) 
+                                    - $cart->discount_amount,
             'token'              => '', // Se asignará en el frontend
             'description'        => core()->getCurrentChannel()->name,
             'installments'       => 1, // Se puede modificar según la configuración
@@ -57,7 +59,5 @@ class MercadoPagoStandard extends MercadoPago
             'auto_return'        => 'approved',
             'notification_url'   => route('mercadopago.standard.ipn'),
         ];
-
-        return $fields;
     }
 }
