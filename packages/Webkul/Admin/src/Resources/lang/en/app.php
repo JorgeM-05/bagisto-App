@@ -3860,6 +3860,11 @@ return [
                     'money-transfer-info'            => 'Transfer of funds from one person or account to another, often electronically, for various purposes such as transactions or remittances.',
                     'page-title'                     => 'Payment Methods',
                     'paid'                           => 'Paid',
+                    'mercadopago-smart-button'            => 'mercadopago',
+                    'mercadopago-smart-button-info'       => 'mercadopago Smart Button: Simplifies online payments with customizable buttons for secure, multi-method transactions on websites and apps.',
+                    'mercadopago-standard'                => 'mercadopago Standard',
+                    'mercadopago-standard-info'           => 'mercadopago Standard is a basic mercadopago payment option for online businesses, enabling customers to pay using their PayPal accounts or credit/debit cards.',
+                    
                     'paypal-smart-button'            => 'PayPal',
                     'paypal-smart-button-info'       => 'PayPal Smart Button: Simplifies online payments with customizable buttons for secure, multi-method transactions on websites and apps.',
                     'paypal-standard'                => 'PayPal Standard',

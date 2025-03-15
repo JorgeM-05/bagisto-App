@@ -117,6 +117,14 @@
 
                                 {!! view_render_event('bagisto.shop.checkout.onepage.summary.paypal_smart_button.after') !!}
                             </template>
+                            <template v-if="cart.payment_method == 'mercadopago_smart_button'">
+                                {!! view_render_event('bagisto.shop.checkout.onepage.summary.mercadopago_smart_button.before') !!}
+
+                                <!-- Paypal Smart Button Vue Component -->
+                                <v-mercadopago-smart-button></v-mercadopago-smart-button>
+
+                                {!! view_render_event('bagisto.shop.checkout.onepage.summary.mercadopago_smart_button.after') !!}
+                            </template>
 
                             <template v-else>
                                 <x-shop::button

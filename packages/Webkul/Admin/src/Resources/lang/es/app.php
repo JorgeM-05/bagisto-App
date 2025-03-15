@@ -3860,6 +3860,12 @@ return [
                     'money-transfer-info'            => 'Transferencia de fondos de una persona o cuenta a otra, a menudo de forma electrónica, con diversos fines como transacciones o remesas.',
                     'page-title'                     => 'Métodos de pago',
                     'paid'                           => 'Pagado',
+                    'mercadopago-smart-button'            => 'mercadopago',
+                    'mercadopago-smart-button-info'       => 'Botón inteligente de mercadopago: simplifica los pagos en línea con botones personalizables para transacciones seguras y multimétodo en sitios web y aplicaciones.',
+                    'mercadopago-standard'                => 'mercadopago estándar',
+                    'mercadopago-standard-info'           => 'mercadopago estándar es una opción de pago básica de mercadopago para negocios en línea, que permite a los clientes pagar con sus cuentas de PayPal o tarjetas de crédito/débito.',
+                    'mercadopago-smart-button'       => 'MercadoPago',
+                    
                     'paypal-smart-button'            => 'PayPal',
                     'paypal-smart-button-info'       => 'Botón inteligente de PayPal: simplifica los pagos en línea con botones personalizables para transacciones seguras y multimétodo en sitios web y aplicaciones.',
                     'paypal-standard'                => 'PayPal estándar',

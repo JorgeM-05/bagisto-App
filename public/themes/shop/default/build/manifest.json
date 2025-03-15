@@ -53,6 +53,10 @@
     "file": "assets/no-address-740c7843.png",
     "src": "src/Resources/assets/images/no-address.png"
   },
+  "src/Resources/assets/images/mercadopago.png": {
+    "file": "assets/paypal-df581855.png",
+    "src": "src/Resources/assets/images/paypal.png"
+  },
   "src/Resources/assets/images/paypal.png": {
     "file": "assets/paypal-df581855.png",
     "src": "src/Resources/assets/images/paypal.png"

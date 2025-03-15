@@ -12,27 +12,36 @@ class MercadoPagoServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        include __DIR__.'/../Http/routes.php';
+        include __DIR__ . '/../Http/routes.php';
+        $this->loadConfig();
 
-        // $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'mercadopago');
-        // $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'mercadopago');
+        // $this->app->register(EventServiceProvider::class);
+        $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+        $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'mercadopago');
+
+        $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'mercadopago');
 
         // $this->app->register(EventServiceProvider::class);
 
-
-        include __DIR__.'/../Http/routes.php';
-
-        $this->loadTranslationsFrom(__DIR__.'/../Resources/lang', 'mercadopago');
-
-        $this->loadViewsFrom(__DIR__.'/../Resources/views', 'mercadopago');
-
-        $this->app->register(EventServiceProvider::class);
-
-        $this->app->booted(function () {
-            $this->extendPaymentMethods();
-        });
+        // $this->app->booted(function () {
+        //     $this->extendPaymentMethods();
+        // });
     }
+    protected function loadConfig()
+    {
+        $this->mergeConfigFrom(
+            __DIR__ . '/../Config/paymentmethods.php',
+            'paymentmethods'
+        );
 
+        $config = require __DIR__ . '/../Config/system.php';
+
+        if (is_array($config)) {
+            $this->mergeConfigFrom(__DIR__ . '/../Config/system.php', 'core');
+        } else {
+            throw new \Exception("Config file system.php must return an array.");
+        }
+    }
     /**
      * Register services.
      */
@@ -59,6 +68,16 @@ class MercadoPagoServiceProvider extends ServiceProvider
         //     $accessToken = env('MERCADOPAGO_ACCESS_TOKEN', ''); // Usamos el .env como fallback
         //     return new \Webkul\MercadoPago\Payment\MercadoPagoButton($accessToken);
         // });
+
+        // $this->mergeConfigFrom(
+        //     dirname(__DIR__) . '/Config/paymentmethods.php',
+        //     'payment_methods'
+        // );
+
+        // $this->mergeConfigFrom(
+        //     dirname(__DIR__) . '/Config/system.php',
+        //     'core'
+        // );
     }
 
     /**
