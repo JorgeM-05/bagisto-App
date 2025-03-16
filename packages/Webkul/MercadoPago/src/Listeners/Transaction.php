@@ -23,25 +23,25 @@ class Transaction
      */
     public function saveTransaction($invoice)
     {
-        $data = request()->all();
+        // $data = request()->all();
 
-        if ($invoice->order->payment->method == 'mercadopago') {
-            if (isset($data['payment_id'])) {
-                $transactionDetails = $this->mercadoPago->getPaymentDetails($data['payment_id']);
+        // if ($invoice->order->payment->method == 'mercadopago') {
+        //     if (isset($data['payment_id'])) {
+        //         $transactionDetails = $this->mercadoPago->getOrder($data['payment_id']);
 
-                if ($transactionDetails && isset($transactionDetails['status'])) {
-                    $this->orderTransactionRepository->create([
-                        'transaction_id' => $transactionDetails['id'],
-                        'status'         => $transactionDetails['status'],
-                        'type'           => $transactionDetails['payment_type_id'],
-                        'amount'         => $transactionDetails['transaction_amount'],
-                        'payment_method' => $invoice->order->payment->method,
-                        'order_id'       => $invoice->order->id,
-                        'invoice_id'     => $invoice->id,
-                        'data'           => json_encode($transactionDetails),
-                    ]);
-                }
-            }
-        }
+        //         if ($transactionDetails && isset($transactionDetails['status'])) {
+        //             $this->orderTransactionRepository->create([
+        //                 'transaction_id' => $transactionDetails['id'],
+        //                 'status'         => $transactionDetails['status'],
+        //                 'type'           => $transactionDetails['payment_type_id'],
+        //                 'amount'         => $transactionDetails['transaction_amount'],
+        //                 'payment_method' => $invoice->order->payment->method,
+        //                 'order_id'       => $invoice->order->id,
+        //                 'invoice_id'     => $invoice->id,
+        //                 'data'           => json_encode($transactionDetails),
+        //             ]);
+        //         }
+        //     }
+        // }
     }
 }

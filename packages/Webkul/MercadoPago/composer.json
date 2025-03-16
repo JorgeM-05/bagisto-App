@@ -1,7 +1,6 @@
 {
-    "name": "webkul/mercadopago",
-    "license": "MIT",
-    "require": {},
+    "name": "mercadopago/bagisto-payment",
+    "description": "Método de pago Mercado Pago para Bagisto",
     "autoload": {
         "psr-4": {
             "Webkul\\MercadoPago\\": "src/"
@@ -14,6 +13,5 @@
             ],
             "aliases": {}
         }
-    },
-    "minimum-stability": "dev"
+    }
 }

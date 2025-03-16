@@ -1,41 +1,42 @@
 <?php
 
-namespace Webkul\MercadoPago\Payment;
+namespace Webkul\MercadoPago\payment;
 
-use MercadoPago\MercadoPagoConfig;
+use Illuminate\Support\Facades\Storage;
 use Webkul\Payment\Payment\Payment;
 
-abstract class MercadoPago extends Payment
+class MercadoPago extends Payment
 {
+
+
+
+
     /**
-     * Código del método de pago.
+     * Payment method code
      *
      * @var string
      */
-    protected $code = 'mercadopago_smart_button';
+    protected $code  = 'mercadopago_source';
 
     /**
-     * Constructor.
+     * Return paypal redirect url.
+     *
+     * @return string
      */
-    public function __construct()
+    public function getRedirectUrl()
     {
-        $this->initialize();
+        return route('mercadopago_source.redirect');
     }
 
     /**
-     * Inicializa el SDK de MercadoPago con credenciales.
+     * Returns payment method image
      *
-     * @return void
-     * @throws \Exception
+     * @return array
      */
-    protected function initialize()
+    public function getImage()
     {
-        $accessToken = core()->getConfigData('sales.paymentmethods.mercadopago.client_secret');
+        $url = $this->getConfigData('image');
 
-        if (empty($accessToken)) {
-            throw new \Exception("MercadoPago: El token de acceso no está configurado en la administración de Bagisto.");
-        }
-
-        MercadoPagoConfig::setAccessToken($accessToken);
+        return $url ? Storage::url($url) : bagisto_asset('images/mercadopago-source.png', 'mercadopago_source');
     }
 }

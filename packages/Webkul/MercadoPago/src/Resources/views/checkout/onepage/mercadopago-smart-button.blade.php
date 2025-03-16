@@ -1,75 +1,104 @@
-@if (
-request()->routeIs('shop.checkout.onepage.index')
-&& (bool) core()->getConfigData('sales.payment_methods.mercadopago_smart_button.active')
+<!-- @if (
+    request()->routeIs('shop.checkout.onepage.index')
+    && (bool) core()->getConfigData('sales.payment_methods.paypal_smart_button.active')
 )
-@php
-$publicKey = core()->getConfigData('sales.payment_methods.mercadopago_smart_button.client_id');
-$acceptedCurrency = core()->getConfigData('sales.payment_methods.mercadopago_smart_button.accepted_currencies') ?? 'USD';
-@endphp
+    @php
+        $clientId = core()->getConfigData('sales.payment_methods.paypal_smart_button.client_id');
 
-@pushOnce('scripts')
-<script
-    src="https://sdk.mercadopago.com/js/v2"
-    data-partner-attribution-id="Bagisto_Cart"></script>
+        $acceptedCurrency = core()->getConfigData('sales.payment_methods.paypal_smart_button.accepted_currencies');
+    @endphp
 
-<script
-    type="text/x-template"
-    id="v-mercadopago-smart-button-template">
-    <div class="w-full mercadopago-button-container"></div>
+    @pushOnce('scripts')
+        <script
+            src="https://www.paypal.com/sdk/js?client-id={{ $clientId }}&currency={{ $acceptedCurrency }}"
+            data-partner-attribution-id="Bagisto_Cart"
+        >
         </script>
 
-<script type="module">
-    console.log("eRROR >____>zDSFSDF");
+        <script
+            type="text/x-template"
+            id="v-paypal-smart-button-template"
+        >
+            <div class="w-full paypal-button-container"></div>
+        </script>
 
-    app.component('v-mercadopago-smart-button', {
-        template: '#v-mercadopago-smart-button-template',
+        <script type="module">
+            app.component('v-paypal-smart-button', {
+                template: '#v-paypal-smart-button-template',
 
-        mounted() {
-            this.register();
-        },
+                mounted() {
+                    this.register();
+                },
 
-        methods: {
-            register() {
-                if (typeof MercadoPago === 'undefined') {
-                    console.log("eRROR >____>zDSFSDF22");
+                methods: {
+                    register() {
+                        if (typeof paypal == 'undefined') {
+                            this.$emitter.emit('add-flash', { type: 'error', message: '@lang('paypal::app.errors.invalid-configs')' });
 
-                    this.$emitter.emit('add-flash', { type: 'error', message: '@lang('paypal::app.errors.invalid-configs')' });
+                            return;
+                        }
 
-                    return;
-                }
+                        paypal.Buttons(this.getOptions()).render('.paypal-button-container');
+                    },
 
-                console.log("🔹 MercadoPago cargado con Public Key:", "{{ $publicKey }}");
-                console.log("🔹 Moneda aceptada:", "{{ $acceptedCurrency }}");
-
-                const mp = new MercadoPago("{{ $publicKey }}", {
-                    locale: 'es-AR'
-                });
-
-                this.createPreference(mp);
-            },
-
-            async createPreference(mp) {
-                try {
-                    let response = await fetch("{{ route('mercadopago.smart-button.create-order') }}");
-                    let data = await response.json();
-
-                    if (data && data.id) {
-                        console.log("🔹 Preferencia creada correctamente:", data.id);
-                        mp.checkout({
-                            preference: {
-                                id: data.id
+                    getOptions() {
+                        let options = {
+                            style: {
+                                layout: 'vertical',
+                                shape: 'rect',
                             },
-                            autoOpen: true
-                        });
-                    } else {
-                        console.error("❌ Error: No se recibió una preferencia válida de MercadoPago.");
-                    }
-                } catch (error) {
-                    console.error("❌ Error al crear la preferencia de MercadoPago:", error);
-                }
-            }
-        },
-    });
-</script>
-@endPushOnce
-@endif
+
+                            authorizationFailed: false,
+
+                            enableStandardCardFields: false,
+
+                            alertBox: (message) => {
+                                this.$emitter.emit('add-flash', { type: 'error', message: message });
+                            },
+
+                            createOrder: (data, actions) => {
+                                return this.$axios.get("{{ route('paypal.smart-button.create-order') }}")
+                                    .then(response => response.data.result)
+                                    .then(order => order.id)
+                                    .catch(error => {
+                                        if (error.response.data.error === 'invalid_client') {
+                                            options.authorizationFailed = true;
+
+                                            options.alertBox('@lang('paypal::app.errors.invalid-configs')');
+                                        }
+
+                                        return error;
+                                    });
+                            },
+
+                            onApprove: (data, actions) => {
+                                this.$axios.post("{{ route('paypal.smart-button.capture-order') }}", {
+                                    _token: "{{ csrf_token() }}",
+                                    orderData: data
+                                })
+                                .then(response => {
+                                    if (response.data.success) {
+                                        if (response.data.redirect_url) {
+                                            window.location.href = response.data.redirect_url;
+                                        } else {
+                                            window.location.href = "{{ route('shop.checkout.onepage.success') }}";
+                                        }
+                                    }
+                                })
+                                .catch(error => window.location.href = "{{ route('shop.checkout.cart.index') }}");
+                            },
+
+                            onError: (error) => {
+                                if (! options.authorizationFailed) {
+                                    options.alertBox('@lang('paypal::app.errors.something-went-wrong')');
+                                }
+                            },
+                        };
+
+                        return options;
+                    },
+                },
+            });
+        </script>
+    @endPushOnce
+@endif -->

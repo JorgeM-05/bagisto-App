@@ -2,117 +2,169 @@
 
 namespace Webkul\MercadoPago\Payment;
 
-use MercadoPago\Client\Preference\PreferenceClient;
-use MercadoPago\Client\Payment\PaymentClient;
+// use PayPalCheckoutSdk\Core\PayPalHttpClient;
+// use PayPalCheckoutSdk\Core\ProductionEnvironment;
+// use PayPalCheckoutSdk\Core\SandboxEnvironment;
+// use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
+// use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
+// use PayPalCheckoutSdk\Orders\OrdersGetRequest;
+// use PayPalCheckoutSdk\Payments\CapturesRefundRequest;
+use Webkul\MercadoPago\payment\MercadoPago;
 
-class MercadoPagoButton extends MercadoPago
+class SmartButton extends MercadoPago
 {
     /**
-     * Código del método de pago.
+     * Client ID.
      *
      * @var string
      */
-    protected $code = 'mercadopago_smart_button';
+    protected $clientId;
 
     /**
-     * ID de atribución de MercadoPago para Bagisto.
+     * Client secret.
      *
      * @var string
      */
-    protected $mercadoPagoPartnerAttributionId = 'Bagisto_Cart';
+    protected $clientSecret;
 
     /**
-     * Crea una orden de pago en MercadoPago.
+     * Payment method code.
+     *
+     * @var string
+     */
+    protected $code = 'paypal_smart_button';
+
+    /**
+     * Paypal partner attribution id.
+     *
+     * @var string
+     */
+    protected $paypalPartnerAttributionId = 'Bagisto_Cart';
+
+    /**
+     * Constructor.
+     */
+    public function __construct()
+    {
+        $this->initialize();
+    }
+
+    /**
+     * Returns PayPal HTTP client instance with environment that has access
+     * credentials context. Use this instance to invoke PayPal APIs, provided the
+     * credentials have access.
+     *
+     * @return PayPalCheckoutSdk\Core\PayPalHttpClient
+     */
+    public function client()
+    {
+        // return new PayPalHttpClient($this->environment());
+    }
+
+    /**
+     * Create order for approval of client.
      *
      * @param  array  $body
-     * @return object
-     * @throws \Exception
+     * @return HttpResponse
      */
     public function createOrder($body)
     {
-        try {
-            $preferenceClient = new PreferenceClient();
-            $preference = $preferenceClient->create([
-                'items' => $body['items'],
-                'payer' => $body['payer'],
-                'back_urls' => [
-                    "success" => route('mercadopago.smart-button.success'),
-                    "failure" => route('mercadopago.smart-button.failure'),
-                    "pending" => route('mercadopago.smart-button.pending')
-                ],
-                'auto_return' => "approved"
-            ]);
+        // $request = new OrdersCreateRequest;
+        // $request->headers['PayPal-Partner-Attribution-Id'] = $this->paypalPartnerAttributionId;
+        // $request->prefer('return=representation');
+        // $request->body = $body;
 
-            return $preference;
-        } catch (\Exception $e) {
-            throw new \Exception("Error al crear la orden en MercadoPago: " . $e->getMessage());
-        }
+        // return $this->client()->execute($request);
     }
 
     /**
-     * Captura el pago después de la aprobación.
+     * Capture order after approval.
      *
-     * @param  string  $paymentId
-     * @return object
-     * @throws \Exception
+     * @param  string  $orderId
+     * @return HttpResponse
      */
-    public function captureOrder($paymentId)
+    public function captureOrder($orderId)
     {
-        try {
-            $paymentClient = new PaymentClient();
-            $payment = $paymentClient->get($paymentId);
+        // $request = new OrdersCaptureRequest($orderId);
 
-            if ($payment && $payment->status === 'approved') {
-                $paymentClient->update($paymentId, ['capture' => true]);
-            }
+        // $request->headers['PayPal-Partner-Attribution-Id'] = $this->paypalPartnerAttributionId;
+        // $request->prefer('return=representation');
 
-            return $payment;
-        } catch (\Exception $e) {
-            throw new \Exception("Error al capturar la orden: " . $e->getMessage());
-        }
+        // $this->client()->execute($request);
     }
 
     /**
-     * Obtiene los detalles de una orden.
+     * Get order details.
      *
-     * @param  string  $paymentId
-     * @return object
-     * @throws \Exception
+     * @param  string  $orderId
+     * @return HttpResponse
      */
-    public function getOrder($paymentId)
+    public function getOrder($orderId)
     {
-        try {
-            $paymentClient = new PaymentClient();
-            return $paymentClient->get($paymentId);
-        } catch (\Exception $e) {
-            throw new \Exception("Error al obtener la orden: " . $e->getMessage());
-        }
+        // return $this->client()->execute(new OrdersGetRequest($orderId));
     }
 
     /**
-     * Reembolsa una orden.
+     * Get capture id.
      *
-     * @param  string  $paymentId
-     * @return object
-     * @throws \Exception
+     * @param  string  $orderId
+     * @return string
      */
-    public function refundOrder($paymentId)
+    public function getCaptureId($orderId)
     {
-        try {
-            $paymentClient = new PaymentClient();
-            return $paymentClient->refund($paymentId);
-        } catch (\Exception $e) {
-            throw new \Exception("Error al reembolsar la orden: " . $e->getMessage());
-        }
+        $paypalOrderDetails = $this->getOrder($orderId);
+
+        return $paypalOrderDetails->result->purchase_units[0]->payments->captures[0]->id;
     }
 
     /**
-     * Retorna la URL de redirección de MercadoPago.
+     * Refund order.
+     *
+     * @return HttpResponse
+     */
+    public function refundOrder($captureId, $body = [])
+    {
+        // $request = new CapturesRefundRequest($captureId);
+
+        // $request->headers['PayPal-Partner-Attribution-Id'] = $this->paypalPartnerAttributionId;
+        // $request->body = $body;
+
+        // return $this->client()->execute($request);
+    }
+
+    /**
+     * Return paypal redirect url.
      *
      * @return string
      */
-    public function getRedirectUrl()
+    public function getRedirectUrl() {}
+
+    /**
+     * Set up and return PayPal PHP SDK environment with PayPal access credentials.
+     * This sample uses SandboxEnvironment. In production, use LiveEnvironment.
+     *
+     * @return PayPalCheckoutSdk\Core\SandboxEnvironment|PayPalCheckoutSdk\Core\ProductionEnvironment
+     */
+    protected function environment()
     {
-        return route('mercadopago.smart-button.redirect');
+        // $isSandbox = $this->getConfigData('sandbox') ?: false;
+
+        // if ($isSandbox) {
+        //     return new SandboxEnvironment($this->clientId, $this->clientSecret);
+        // }
+
+        // return new ProductionEnvironment($this->clientId, $this->clientSecret);
+    }
+
+    /**
+     * Initialize properties.
+     *
+     * @return void
+     */
+    protected function initialize()
+    {
+        $this->clientId = $this->getConfigData('client_id') ?: '';
+
+        $this->clientSecret = $this->getConfigData('client_secret') ?: '';
     }
 }
