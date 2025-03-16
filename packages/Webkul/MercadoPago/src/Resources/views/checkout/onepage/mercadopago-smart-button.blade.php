@@ -1,11 +1,11 @@
-<!-- @if (
+@if (
     request()->routeIs('shop.checkout.onepage.index')
-    && (bool) core()->getConfigData('sales.payment_methods.paypal_smart_button.active')
+    && (bool) core()->getConfigData('sales.payment_methods.mercadopago_smart_button.active')
 )
     @php
-        $clientId = core()->getConfigData('sales.payment_methods.paypal_smart_button.client_id');
+        $clientId = core()->getConfigData('sales.payment_methods.mercadopago_smart_button.client_id');
 
-        $acceptedCurrency = core()->getConfigData('sales.payment_methods.paypal_smart_button.accepted_currencies');
+        $acceptedCurrency = core()->getConfigData('sales.payment_methods.mercadopago_smart_button.accepted_currencies');
     @endphp
 
     @pushOnce('scripts')
@@ -17,14 +17,14 @@
 
         <script
             type="text/x-template"
-            id="v-paypal-smart-button-template"
+            id="v-mercadopago-smart-button-template"
         >
-            <div class="w-full paypal-button-container"></div>
+            <div class="w-full mercadopago-button-container"></div>
         </script>
 
         <script type="module">
-            app.component('v-paypal-smart-button', {
-                template: '#v-paypal-smart-button-template',
+            app.component('v-mercadopago-smart-button', {
+                template: '#v-mercadopago-smart-button-template',
 
                 mounted() {
                     this.register();
@@ -32,13 +32,13 @@
 
                 methods: {
                     register() {
-                        if (typeof paypal == 'undefined') {
-                            this.$emitter.emit('add-flash', { type: 'error', message: '@lang('paypal::app.errors.invalid-configs')' });
+                        if (typeof mercadopago == 'undefined') {
+                            this.$emitter.emit('add-flash', { type: 'error', message: '@lang('mercadopago::app.errors.invalid-configs')' });
 
                             return;
                         }
 
-                        paypal.Buttons(this.getOptions()).render('.paypal-button-container');
+                        mercadopago.Buttons(this.getOptions()).render('.mercadopago-button-container');
                     },
 
                     getOptions() {
@@ -57,14 +57,14 @@
                             },
 
                             createOrder: (data, actions) => {
-                                return this.$axios.get("{{ route('paypal.smart-button.create-order') }}")
+                                return this.$axios.get("{{ route('mercadopago.smart-button.create-order') }}")
                                     .then(response => response.data.result)
                                     .then(order => order.id)
                                     .catch(error => {
                                         if (error.response.data.error === 'invalid_client') {
                                             options.authorizationFailed = true;
 
-                                            options.alertBox('@lang('paypal::app.errors.invalid-configs')');
+                                            options.alertBox('@lang('mercadopago::app.errors.invalid-configs')');
                                         }
 
                                         return error;
@@ -72,7 +72,7 @@
                             },
 
                             onApprove: (data, actions) => {
-                                this.$axios.post("{{ route('paypal.smart-button.capture-order') }}", {
+                                this.$axios.post("{{ route('mercadopago.smart-button.capture-order') }}", {
                                     _token: "{{ csrf_token() }}",
                                     orderData: data
                                 })
@@ -90,7 +90,7 @@
 
                             onError: (error) => {
                                 if (! options.authorizationFailed) {
-                                    options.alertBox('@lang('paypal::app.errors.something-went-wrong')');
+                                    options.alertBox('@lang('mercadopago::app.errors.something-went-wrong')');
                                 }
                             },
                         };
@@ -101,4 +101,4 @@
             });
         </script>
     @endPushOnce
-@endif -->
+@endif

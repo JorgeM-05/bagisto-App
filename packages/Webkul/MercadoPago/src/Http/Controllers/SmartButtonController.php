@@ -6,178 +6,188 @@ use Illuminate\Http\Request;
 use Webkul\Checkout\Facades\Cart;
 use Webkul\Sales\Repositories\OrderRepository;
 use Webkul\Sales\Repositories\InvoiceRepository;
- 
+use MercadoPago\MercadoPagoConfig;
+use MercadoPago\Client\Preference\PreferenceClient;
+use MercadoPago\Client\Payment\PaymentClient;
 
 class SmartButtonController extends Controller
 {
- 
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct(
+        protected OrderRepository $orderRepository,
+        protected InvoiceRepository $invoiceRepository
+    ) {}
 
-        /**
-         * Create a new controller instance.
-         * 
-         * @return void
-         */
-        public function __construct(
-            protected OrderRepository $orderRepository,  
-            protected InvoiceRepository $invoiceRepository
-        ) 
-        {
-        }
-     
-        /*
-         * To Get Signature
-         * 
-         * @param  array  $params
-         * @return string
-         */
-        public function sign($params) 
-        {
-            return $this->signData($this->buildDataToSign($params), core()->getConfigData('sales.payment_methods.mercadopago_source.secret_key'));
-        }
-     
-        /*
-         * To Get Signature
-         * 
-         * @param  string  $data
-         * @param  string  $secretKey
-         * @return string
-         */
-        public function signData($data, $secretKey) 
-        {
-            return base64_encode(hash_hmac('sha256', $data, $secretKey, true));
-        }
-       
-        /*
-         * To Prepare Data for Signature
-         * 
-         * @param  array  $params
-         * @return string
-         */
-        public function buildDataToSign($params) 
-        {
-            $signedFieldNames = explode(",", $params["signed_field_names"]);
-     
-            foreach ($signedFieldNames as $field) {
-                $dataToSign[] = $field . "=" . $params[$field];
-            }
-     
-            return implode(",", $dataToSign);
-        }
-       
-        /**
-         * Redirects to the payment server.
-         *
-         * @return \Illuminate\View\View
-         */
-        public function redirect()
-        {
+    /**
+     * Crea una orden de Mercado Pago.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function createOrder()
+    {
+        try {
+            // Configurar Mercado Pago con la clave de acceso
+            MercadoPagoConfig::setAccessToken(env('MERCADOPAGO_ACCESS_TOKEN'));
+
+            // Obtener el carrito actual
             $cart = Cart::getCart();
-     
-            $uniqueId =  uniqid();
-     
-            if ((bool) core()->getConfigData('sales.payment_methods.mercadopago_source.sandbox')) {
-                // For Sandbox Mode
-                $mercadopagoSourceUrl = "https://testsecureacceptance.mercadopagosource.com/pay";
-            } else {
-                // For Production Mode
-                $mercadopagoSourceUrl = "https://secureacceptance.mercadopagosource.com/pay";
+
+            // Instancia de preferencias de pago
+            $preferenceClient = new PreferenceClient();
+
+            // Crear los productos para la orden
+            $items = [];
+            foreach ($cart->items as $item) {
+                $items[] = [
+                    "title" => $item->name,
+                    "quantity" => $item->quantity,
+                    "unit_price" => (float) $item->price,
+                    "currency_id" => $cart->cart_currency_code
+                ];
             }
-     
-            // shipping rate
-            $shippingRate = $cart?->selected_shipping_rate->price ?? 0; 
-     
-            // discount amount
-            $discountAmount = $cart->discount_amount;
-     
-            // total amount
-            $amount = ($cart->sub_total + $cart->tax_total + $shippingRate) - $discountAmount;
-     
-            $params  = [
-                "access_key"                  => core()->getConfigData('sales.payment_methods.mercadopago_source.access_key'),
-                "profile_id"                  => core()->getConfigData('sales.payment_methods.mercadopago_source.profile_id'),
-                "transaction_uuid"            => $uniqueId,
-                "signed_field_names"          => 'partner_solution_id,access_key,profile_id,transaction_uuid,signed_field_names,unsigned_field_names,signed_date_time,locale,transaction_type,reference_number,amount,currency,bill_to_address_line1,bill_to_address_city,bill_to_address_state,bill_to_address_country,bill_to_address_postal_code,bill_to_email,bill_to_surname,bill_to_forename',
-                "unsigned_field_names"        => '',
-                "signed_date_time"            => gmdate("Y-m-d\TH:i:s\Z"),
-                "locale"                      => 'en',
-                "partner_solution_id"         => 'IGT4AWTG',
-                "transaction_type"            => 'authorization',
-                "reference_number"            => $uniqueId,
-                "amount"                      => $amount,
-                "currency"                    => $cart->cart_currency_code,
-                "bill_to_address_line1"       => $cart->billing_address->address,
-                "bill_to_address_city"        => $cart->billing_address->city,
-                "bill_to_address_state"       => $cart->billing_address->state,
-                "bill_to_address_country"     => $cart->billing_address->country,
-                'bill_to_address_postal_code' => $cart->billing_address->postcode,
-                "bill_to_email"               => $cart->billing_address->email,
-                "bill_to_surname"             => $cart->billing_address->last_name,
-                "bill_to_forename"            => $cart->billing_address->first_name,
-            ];
-     
-            $params['signature'] = $this->sign($params);
-     
-            return view('mercadopago_source::mercadopago-source-redirect', compact('params', 'mercadopagoSourceUrl'));
-        }
-     
-        /*
-         * To Check Status of Payment
-         * 
-         * @return \Illuminate\Http\Response 
-         */
-        public function processPayment() 
-        {
-            try {
-                if (request()->reason_code == 100) {
-                    $order = $this->orderRepository->create(Cart::prepareDataForOrder());
-     
-                    $this->orderRepository->update(['status' => 'processing'], $order->id);
-     
-                    if ($order->canInvoice()) {
-                        $this->invoiceRepository->create($this->prepareInvoiceData($order));
-                    }
-     
-                    Cart::deActivateCart();
-     
-                    session()->flash('order', $order);
-     
-                    return redirect()->route('shop.checkout.onepage.success');
-                } 
-            } catch (\Exception $e) {
-     
-            }
-     
-            session()->flash('error', trans('mercadopago_source::app.admin.transaction.error'));
-     
-            return redirect()->route('shop.checkout.onepage.index');
-        }
-     
-        /**
-         * Prepare order's invoice data for creation.
-         *
-         * @param  \Webkul\Sales\Models\Order  $order
-         * @return array
-         */
-        protected function prepareInvoiceData($order)
-        {
-            $invoiceData = ["order_id" => $order->id];
-     
-            foreach ($order->items as $item) {
-                $invoiceData['invoice']['items'][$item->id] = $item->qty_to_invoice;
-            }
-     
-            return $invoiceData;
-        }
-     
-        /**
-         * To Cancel Payment
-         * 
-         * @return \Illuminate\Http\Response
-         */
-        public function cancelPayment() 
-        {
-            session()->flash('success', trans('mercadopago_source::app.admin.transaction.error'));
-     
-            return redirect()->route('shop.checkout.onepage.index');
+
+            // Crear la orden en Mercado Pago
+            $preference = $preferenceClient->create([
+                "items" => $items,
+                "external_reference" => uniqid(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Orden creada con éxito',
+                'order_id' => $preference->id,
+                'init_point' => $preference->init_point, // URL para el pago
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear la orden',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
+
+    /**
+     * Redirige al usuario a la página de pago de Mercado Pago.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function redirect()
+    {
+        $cart = Cart::getCart();
+        $amount = $cart->sub_total + $cart->tax_total + ($cart->selected_shipping_rate->price ?? 0) - $cart->discount_amount;
+
+        return view('mercadopago::mercadopago-source-redirect', [
+            'amount' => $amount,
+            'currency' => $cart->cart_currency_code,
+        ]);
+    }
+
+    /**
+     * Procesa la respuesta de Mercado Pago después del pago.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function processPayment()
+    {
+        try {
+            if (request()->get('status') === 'approved') {
+                $order = $this->orderRepository->create(Cart::prepareDataForOrder());
+                $this->orderRepository->update(['status' => 'processing'], $order->id);
+
+                if ($order->canInvoice()) {
+                    $this->invoiceRepository->create($this->prepareInvoiceData($order));
+                }
+
+                Cart::deActivateCart();
+                session()->flash('order', $order);
+
+                return redirect()->route('shop.checkout.onepage.success');
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', trans('mercadopago::app.admin.transaction.error'));
+        }
+
+        return redirect()->route('shop.checkout.onepage.index');
+    }
+
+    /**
+     * Prepara los datos de la factura.
+     *
+     * @param  \Webkul\Sales\Models\Order  $order
+     * @return array
+     */
+    protected function prepareInvoiceData($order)
+    {
+        $invoiceData = ["order_id" => $order->id];
+
+        foreach ($order->items as $item) {
+            $invoiceData['invoice']['items'][$item->id] = $item->qty_to_invoice;
+        }
+
+        return $invoiceData;
+    }
+
+    /**
+     * Cancela el pago.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function cancelPayment()
+    {
+        session()->flash('success', trans('mercadopago::app.admin.transaction.cancelled'));
+
+        return redirect()->route('shop.checkout.onepage.index');
+    }
+
+    /**
+     * Captura el pago de Mercado Pago.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function captureOrder(Request $request)
+    {
+        try {
+            // Configurar Mercado Pago
+            MercadoPagoConfig::setAccessToken(env('MERCADOPAGO_ACCESS_TOKEN'));
+
+            // Instancia del cliente de pagos
+            $paymentClient = new PaymentClient();
+
+            // Capturar el pago
+            $payment = $paymentClient->create([
+                "transaction_amount" => (float) $request->input('amount'),
+                "token" => $request->input('token'),
+                "description" => "Orden de compra #" . $request->input('order_id'),
+                "payment_method_id" => $request->input('payment_method_id'),
+                "payer" => [
+                    "email" => $request->input('payer_email'),
+                ],
+            ]);
+
+            if ($payment['status'] == "approved") {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pago aprobado con éxito',
+                    'payment_id' => $payment['id'],
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El pago no fue aprobado',
+                'status' => $payment['status'],
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al capturar el pago',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+}

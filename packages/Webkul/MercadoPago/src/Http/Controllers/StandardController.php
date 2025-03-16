@@ -6,7 +6,7 @@ use Webkul\Checkout\Facades\Cart;
 use Webkul\Sales\Repositories\OrderRepository;
 use Webkul\Sales\Repositories\InvoiceRepository;
  
-class MercadoPagoSourceController extends Controller
+class StandardController extends Controller
 {
     /**
      * Create a new controller instance.
@@ -28,7 +28,7 @@ class MercadoPagoSourceController extends Controller
      */
     public function sign($params) 
     {
-        return $this->signData($this->buildDataToSign($params), core()->getConfigData('sales.payment_methods.mercadopago_source.secret_key'));
+        return $this->signData($this->buildDataToSign($params), core()->getConfigData('sales.payment_methods.mercadopago.secret_key'));
     }
  
     /*
@@ -71,7 +71,7 @@ class MercadoPagoSourceController extends Controller
  
         $uniqueId =  uniqid();
  
-        if ((bool) core()->getConfigData('sales.payment_methods.mercadopago_source.sandbox')) {
+        if ((bool) core()->getConfigData('sales.payment_methods.mercadopago.sandbox')) {
             // For Sandbox Mode
             $mercadopagoSourceUrl = "https://testsecureacceptance.mercadopagosource.com/pay";
         } else {
@@ -89,8 +89,8 @@ class MercadoPagoSourceController extends Controller
         $amount = ($cart->sub_total + $cart->tax_total + $shippingRate) - $discountAmount;
  
         $params  = [
-            "access_key"                  => core()->getConfigData('sales.payment_methods.mercadopago_source.access_key'),
-            "profile_id"                  => core()->getConfigData('sales.payment_methods.mercadopago_source.profile_id'),
+            "access_key"                  => core()->getConfigData('sales.payment_methods.mercadopago.access_key'),
+            "profile_id"                  => core()->getConfigData('sales.payment_methods.mercadopago.profile_id'),
             "transaction_uuid"            => $uniqueId,
             "signed_field_names"          => 'partner_solution_id,access_key,profile_id,transaction_uuid,signed_field_names,unsigned_field_names,signed_date_time,locale,transaction_type,reference_number,amount,currency,bill_to_address_line1,bill_to_address_city,bill_to_address_state,bill_to_address_country,bill_to_address_postal_code,bill_to_email,bill_to_surname,bill_to_forename',
             "unsigned_field_names"        => '',
@@ -113,7 +113,7 @@ class MercadoPagoSourceController extends Controller
  
         $params['signature'] = $this->sign($params);
  
-        return view('mercadopago_source::mercadopago-source-redirect', compact('params', 'mercadopagoSourceUrl'));
+        return view('mercadopago::mercadopago-source-redirect', compact('params', 'mercadopagoSourceUrl'));
     }
  
     /*
@@ -143,7 +143,7 @@ class MercadoPagoSourceController extends Controller
  
         }
  
-        session()->flash('error', trans('mercadopago_source::app.admin.transaction.error'));
+        session()->flash('error', trans('mercadopago::app.admin.transaction.error'));
  
         return redirect()->route('shop.checkout.onepage.index');
     }
@@ -172,7 +172,7 @@ class MercadoPagoSourceController extends Controller
      */
     public function cancelPayment() 
     {
-        session()->flash('success', trans('mercadopago_source::app.admin.transaction.error'));
+        session()->flash('success', trans('mercadopago::app.admin.transaction.error'));
  
         return redirect()->route('shop.checkout.onepage.index');
     }

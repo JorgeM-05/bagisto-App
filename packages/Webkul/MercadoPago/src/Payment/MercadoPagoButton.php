@@ -2,169 +2,64 @@
 
 namespace Webkul\MercadoPago\Payment;
 
-// use PayPalCheckoutSdk\Core\PayPalHttpClient;
-// use PayPalCheckoutSdk\Core\ProductionEnvironment;
-// use PayPalCheckoutSdk\Core\SandboxEnvironment;
-// use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
-// use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
-// use PayPalCheckoutSdk\Orders\OrdersGetRequest;
-// use PayPalCheckoutSdk\Payments\CapturesRefundRequest;
 use Webkul\MercadoPago\payment\MercadoPago;
 
-class SmartButton extends MercadoPago
+class MercadoPagoButton extends MercadoPago
 {
     /**
-     * Client ID.
+     * Código del método de pago.
      *
      * @var string
      */
-    protected $clientId;
+    protected $code = 'mercadopago_smart_button';
 
     /**
-     * Client secret.
-     *
-     * @var string
-     */
-    protected $clientSecret;
-
-    /**
-     * Payment method code.
-     *
-     * @var string
-     */
-    protected $code = 'paypal_smart_button';
-
-    /**
-     * Paypal partner attribution id.
-     *
-     * @var string
-     */
-    protected $paypalPartnerAttributionId = 'Bagisto_Cart';
-
-    /**
-     * Constructor.
-     */
-    public function __construct()
-    {
-        $this->initialize();
-    }
-
-    /**
-     * Returns PayPal HTTP client instance with environment that has access
-     * credentials context. Use this instance to invoke PayPal APIs, provided the
-     * credentials have access.
-     *
-     * @return PayPalCheckoutSdk\Core\PayPalHttpClient
-     */
-    public function client()
-    {
-        // return new PayPalHttpClient($this->environment());
-    }
-
-    /**
-     * Create order for approval of client.
-     *
-     * @param  array  $body
-     * @return HttpResponse
-     */
-    public function createOrder($body)
-    {
-        // $request = new OrdersCreateRequest;
-        // $request->headers['PayPal-Partner-Attribution-Id'] = $this->paypalPartnerAttributionId;
-        // $request->prefer('return=representation');
-        // $request->body = $body;
-
-        // return $this->client()->execute($request);
-    }
-
-    /**
-     * Capture order after approval.
-     *
-     * @param  string  $orderId
-     * @return HttpResponse
-     */
-    public function captureOrder($orderId)
-    {
-        // $request = new OrdersCaptureRequest($orderId);
-
-        // $request->headers['PayPal-Partner-Attribution-Id'] = $this->paypalPartnerAttributionId;
-        // $request->prefer('return=representation');
-
-        // $this->client()->execute($request);
-    }
-
-    /**
-     * Get order details.
-     *
-     * @param  string  $orderId
-     * @return HttpResponse
-     */
-    public function getOrder($orderId)
-    {
-        // return $this->client()->execute(new OrdersGetRequest($orderId));
-    }
-
-    /**
-     * Get capture id.
-     *
-     * @param  string  $orderId
-     * @return string
-     */
-    public function getCaptureId($orderId)
-    {
-        $paypalOrderDetails = $this->getOrder($orderId);
-
-        return $paypalOrderDetails->result->purchase_units[0]->payments->captures[0]->id;
-    }
-
-    /**
-     * Refund order.
-     *
-     * @return HttpResponse
-     */
-    public function refundOrder($captureId, $body = [])
-    {
-        // $request = new CapturesRefundRequest($captureId);
-
-        // $request->headers['PayPal-Partner-Attribution-Id'] = $this->paypalPartnerAttributionId;
-        // $request->body = $body;
-
-        // return $this->client()->execute($request);
-    }
-
-    /**
-     * Return paypal redirect url.
+     * Retorna la URL de redirección de MercadoPago.
      *
      * @return string
      */
-    public function getRedirectUrl() {}
-
-    /**
-     * Set up and return PayPal PHP SDK environment with PayPal access credentials.
-     * This sample uses SandboxEnvironment. In production, use LiveEnvironment.
-     *
-     * @return PayPalCheckoutSdk\Core\SandboxEnvironment|PayPalCheckoutSdk\Core\ProductionEnvironment
-     */
-    protected function environment()
+    public function getRedirectUrl()
     {
-        // $isSandbox = $this->getConfigData('sandbox') ?: false;
-
-        // if ($isSandbox) {
-        //     return new SandboxEnvironment($this->clientId, $this->clientSecret);
-        // }
-
-        // return new ProductionEnvironment($this->clientId, $this->clientSecret);
+        return route('mercadopago.button.redirect');
     }
 
     /**
-     * Initialize properties.
+     * Retorna la URL de notificación IPN de MercadoPago.
      *
-     * @return void
+     * @return string
      */
-    protected function initialize()
+    public function getIPNUrl()
     {
-        $this->clientId = $this->getConfigData('client_id') ?: '';
+        return route('mercadopago.standard.ipn');
+    }
 
-        $this->clientSecret = $this->getConfigData('client_secret') ?: '';
+    /**
+     * Retorna los campos del formulario para el checkout de MercadoPago.
+     *
+     * @return array
+     */
+    public function getFormFields()
+    {
+        $cart = $this->getCart();
+
+        return [
+            'transaction_amount' => $cart->sub_total + $cart->tax_total + 
+                                    ($cart->selected_shipping_rate ? $cart->selected_shipping_rate->price : 0) 
+                                    - $cart->discount_amount,
+            'token'              => '', // Se asignará en el frontend
+            'description'        => core()->getCurrentChannel()->name,
+            'installments'       => 1, // Se puede modificar según la configuración
+            'payment_method_id'  => '', // Se asignará en el frontend
+            'payer'              => [
+                'email' => $cart->billing_address->email,
+            ],
+            'back_urls'          => [
+                'success' => route('mercadopago.standard.success'),
+                'failure' => route('mercadopago.standard.failure'),
+                'pending' => route('mercadopago.standard.pending'),
+            ],
+            'auto_return'        => 'approved',
+            'notification_url'   => route('mercadopago.standard.ipn'),
+        ];
     }
 }
