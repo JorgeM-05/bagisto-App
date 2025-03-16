@@ -18,6 +18,8 @@ class EventServiceProvider extends ServiceProvider
         });
 
         // Guardar transacción después de la generación de la factura
-        Event::listen('sales.invoice.save.after', 'Webkul\MercadoPago\Listeners\Transaction@saveTransaction');
+        // Event::listen('sales.invoice.save.after', 'Webkul\MercadoPago\Listeners\Transaction@saveTransaction');
+        Event::listen('sales.invoice.save.after', [\Webkul\MercadoPago\Listeners\Transaction::class, 'saveTransaction']);
+
     }
 }

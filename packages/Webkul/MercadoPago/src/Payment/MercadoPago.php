@@ -1,6 +1,6 @@
 <?php
 
-namespace Webkul\MercadoPago\payment;
+namespace Webkul\MercadoPago\Payment;
 
 use Illuminate\Support\Facades\Storage;
 use Webkul\Payment\Payment\Payment;
@@ -8,102 +8,82 @@ use Webkul\Payment\Payment\Payment;
 class MercadoPago extends Payment
 {
     /**
-     * PayPal web URL generic getter
+     * Código del método de pago.
      *
-     * @param  array  $params
-     * @return string
+     * @var string
      */
-    public function getMercadopagoUrl($params = [])
+    protected $code = 'mercadopago';
+
+    /**
+     * Obtiene el Access Token desde el panel de administración.
+     *
+     * @return string|null
+     */
+    public function getAccessToken()
     {
-        return sprintf(
-            'https://www.%spaypal.com/cgi-bin/webscr%s',
-            $this->getConfigData('sandbox') ? 'sandbox.' : '',
-            $params ? '?' . http_build_query($params) : ''
-        );
+        return core()->getConfigData('sales.payment_methods.mercadopago_standard.access_token') ?: null;
     }
 
     /**
-     * Add order item fields
+     * Obtiene la Public Key desde el panel de administración.
      *
-     * @param  array  $fields
-     * @param  int  $i
-     * @return void
+     * @return string|null
      */
-    protected function addLineItemsFields(&$fields, $i = 1)
+    public function getPublicKey()
     {
-        $cartItems = $this->getCartItems();
-
-        foreach ($cartItems as $item) {
-            foreach ($this->itemFieldsFormat as $modelField => $mercadopagoField) {
-                $fields[sprintf($mercadopagoField, $i)] = $item->{$modelField};
-            }
-
-            $i++;
-        }
+        return core()->getConfigData('sales.payment_methods.mercadopago_standard.public_key') ?: null;
     }
 
     /**
-     * Add billing address fields
-     *
-     * @param  array  $fields
-     * @return void
-     */
-    protected function addAddressFields(&$fields)
-    {
-        $cart = $this->getCart();
-
-        $billingAddress = $cart->billing_address;
-
-        $fields = array_merge($fields, [
-            'city'             => $billingAddress->city,
-            'country'          => $billingAddress->country,
-            'email'            => $billingAddress->email,
-            'first_name'       => $billingAddress->first_name,
-            'last_name'        => $billingAddress->last_name,
-            'zip'              => $billingAddress->postcode,
-            'state'            => $billingAddress->state,
-            'address1'         => $billingAddress->address,
-            'address_override' => 1,
-        ]);
-    }
-
-    /**
-     * Checks if line items enabled or not
+     * Verifica si está en modo sandbox o producción.
      *
      * @return bool
      */
-    public function getIsLineItemsEnabled()
+    public function getSandboxMode()
     {
-        return true;
+        return (bool) core()->getConfigData('sales.payment_methods.mercadopago_standard.sandbox');
     }
 
     /**
-     * Format a currency value according to mercadopago's api constraints
+     * Obtiene la URL de pago de Mercado Pago.
      *
-     * @param  float|int  $long
+     * @return string
      */
-    public function formatCurrencyValue($number): float
+    public function getMercadopagoUrl()
     {
-        return round((float) $number, 2);
+        return $this->getSandboxMode()
+            ? 'https://api.mercadopago.com/sandbox/checkout/preferences'
+            : 'https://api.mercadopago.com/checkout/preferences';
     }
+    
 
     /**
-     * Format phone field according to mercadopago's api constraints
+     * Retorna la URL de redirección de MercadoPago.
      *
-     * Strips non-numbers characters like '+' or ' ' in
-     * inputs like "+54 11 3323 2323"
-     *
-     * @param  mixed  $phone
+     * @return string|null
      */
-    public function formatPhone($phone): string
+    public function getRedirectUrl()
     {
-        return preg_replace('/[^0-9]/', '', (string) $phone);
+        return $this->getMethodStatus() 
+            ? route('mercadopago.standard.redirect') 
+            : null;
+    }
+    
+
+    /**
+     * Verifica si el método de pago está activo en el panel de administración.
+     *
+     * @return bool
+     */
+    public function getMethodStatus()
+    {
+        return (bool) core()->getConfigData('sales.payment_methods.mercadopago_standard.active');
     }
 
     /**
-     * Returns payment method image
+     * Obtiene la imagen del método de pago.
      *
-     * @return array
+     * @return string
      */
     public function getImage()
     {
@@ -111,34 +91,26 @@ class MercadoPago extends Payment
 
         return $url ? Storage::url($url) : bagisto_asset('images/mercadopago.png', 'shop');
     }
-    public function getRedirectUrl()
+
+    /**
+     * Formatea un valor monetario según las restricciones de Mercado Pago.
+     *
+     * @param  float|int  $number
+     * @return float
+     */
+    public function formatCurrencyValue($number): float
     {
-        return route('mercadopago_source.redirect');
+        return round((float) $number, 2);
+    }
+
+    /**
+     * Formatea un número de teléfono según las restricciones de Mercado Pago.
+     *
+     * @param  mixed  $phone
+     * @return string
+     */
+    public function formatPhone($phone): string
+    {
+        return preg_replace('/[^0-9]/', '', (string) $phone);
     }
 }
-
-    // /**
-    //  * Payment method code
-    //  *
-    //  * @var string
-    //  */
-    // protected $code  = 'mercadopago_source';
-
-    // /**
-    //  * Return paypal redirect url.
-    //  *
-    //  * @return string
-    //  */
-
-
-    // /**
-    //  * Returns payment method image
-    //  *
-    //  * @return array
-    //  */
-    // public function getImage()
-    // {
-    //     $url = $this->getConfigData('image');
-
-    //     return $url ? Storage::url($url) : bagisto_asset('images/mercadopago-source.png', 'mercadopago_source');
-    // }

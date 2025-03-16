@@ -22,7 +22,7 @@ Route::group(['middleware' => ['web', 'theme', 'locale', 'currency'], 'prefix' =
         Route::post('response', 'processPayment')->name('mercadopago.smart-button.response');
         Route::post('cancel', 'cancelPayment')->name('mercadopago.smart-button.cancel');
         Route::post('create-order', 'createOrder')->name('mercadopago.smart-button.create-order');
-        Route::post('capture-order', 'captureOrder')->name('mercadopago.smart-button.capture-order'); // ✅ Agregar esta ruta
+        Route::post('capture-order', 'captureOrder')->name('mercadopago.smart-button.capture-order');
 
     });
 });

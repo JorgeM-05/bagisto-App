@@ -4,11 +4,15 @@ namespace Webkul\MercadoPago\Listeners;
 
 use Webkul\MercadoPago\Payment\MercadoPago;
 use Webkul\Sales\Repositories\OrderTransactionRepository;
+use Illuminate\Support\Facades\Log;
 
 class Transaction
 {
     /**
-     * Create a new listener instance.
+     * Constructor.
+     *
+     * @param  MercadoPago  $mercadoPago
+     * @param  OrderTransactionRepository  $orderTransactionRepository
      */
     public function __construct(
         protected MercadoPago $mercadoPago,
@@ -23,25 +27,39 @@ class Transaction
      */
     public function saveTransaction($invoice)
     {
-        // $data = request()->all();
+        $data = request()->all();
 
-        // if ($invoice->order->payment->method == 'mercadopago') {
-        //     if (isset($data['payment_id'])) {
-        //         $transactionDetails = $this->mercadoPago->getOrder($data['payment_id']);
+        // Verifica que la orden haya sido pagada con Mercado Pago Standard
+        if ($invoice->order->payment->method == 'mercadopago_standard') {
+            if (isset($data['payment_id'])) {
+                // Obtener los detalles de la transacción desde Mercado Pago
+                $transactionDetails = $this->mercadoPago->getOrder($data['payment_id']);
 
-        //         if ($transactionDetails && isset($transactionDetails['status'])) {
-        //             $this->orderTransactionRepository->create([
-        //                 'transaction_id' => $transactionDetails['id'],
-        //                 'status'         => $transactionDetails['status'],
-        //                 'type'           => $transactionDetails['payment_type_id'],
-        //                 'amount'         => $transactionDetails['transaction_amount'],
-        //                 'payment_method' => $invoice->order->payment->method,
-        //                 'order_id'       => $invoice->order->id,
-        //                 'invoice_id'     => $invoice->id,
-        //                 'data'           => json_encode($transactionDetails),
-        //             ]);
-        //         }
-        //     }
-        // }
+                // Asegurar que los datos sean un array antes de acceder a ellos
+                if (is_array($transactionDetails) && isset($transactionDetails['status'])) {
+                    try {
+                        // Guardar los detalles de la transacción en la base de datos
+                        $this->orderTransactionRepository->create([
+                            'transaction_id' => $transactionDetails['id'],
+                            'status'         => $transactionDetails['status'],
+                            'type'           => $transactionDetails['payment_type_id'] ?? 'unknown',
+                            'amount'         => $transactionDetails['transaction_amount'] ?? 0,
+                            'payment_method' => $invoice->order->payment->method,
+                            'order_id'       => $invoice->order->id,
+                            'invoice_id'     => $invoice->id,
+                            'data'           => json_encode($transactionDetails),
+                        ]);
+
+                        Log::info("MercadoPago: Transacción guardada correctamente para la orden ID {$invoice->order->id}.");
+                    } catch (\Exception $e) {
+                        Log::error("MercadoPago: Error al guardar la transacción - " . $e->getMessage());
+                    }
+                } else {
+                    Log::error("MercadoPago: No se pudo obtener información válida para la transacción con ID {$data['payment_id']}.");
+                }
+            } else {
+                Log::error("MercadoPago: No se recibió un payment_id en la solicitud.");
+            }
+        }
     }
 }

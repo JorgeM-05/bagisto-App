@@ -1752,6 +1752,20 @@ return [
         'sort'   => 3,
         'fields' => [
             [
+                'name'          => 'access_token',
+                'title'         => 'Access Token',
+                'type'          => 'text',
+                'validation'    => 'required_if:active,1',
+                'channel_based' => true,
+            ],
+            [
+                'name'          => 'public_key',
+                'title'         => 'Public Key',
+                'type'          => 'text',
+                'validation'    => 'required_if:active,1',
+                'channel_based' => true,
+            ],
+            [
                 'name'          => 'title',
                 'title'         => 'admin::app.configuration.index.sales.payment-methods.title',
                 'type'          => 'text',

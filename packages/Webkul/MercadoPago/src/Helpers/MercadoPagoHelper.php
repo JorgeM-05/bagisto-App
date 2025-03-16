@@ -59,7 +59,7 @@ class MercadoPagoHelper
     protected function getPaymentData(int $paymentId)
     {
         try {
-            $accessToken = core()->getConfigData('sales.paymentmethods.mercadopago.access_token');
+            $accessToken = core()->getConfigData('sales.payment_methods.mercadopago_standard.access_token');
 
             if (empty($accessToken)) {
                 throw new \Exception("El Access Token de MercadoPago no está configurado.");
@@ -68,7 +68,7 @@ class MercadoPagoHelper
             $paymentClient = new PaymentClient();
             $payment = $paymentClient->get($paymentId);
 
-            return $payment ? (array) $payment : null;
+            return isset($payment->id) ? (array) $payment : null;
         } catch (\Exception $e) {
             Log::error("MercadoPago: Error al obtener los datos del pago - " . $e->getMessage());
             return null;

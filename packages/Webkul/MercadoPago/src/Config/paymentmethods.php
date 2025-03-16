@@ -12,10 +12,11 @@ return [
         'sort'             => 2,
     ],
     'mercadopago_standard' => [
-        'code'        => 'mercadopago',
+        'code'        => 'mercadopago_standard',
         'title'       => 'Mercado Pago',
         'description' => 'Paga con Mercado Pago de forma segura.',
         'class'       => 'Webkul\MercadoPago\Payment\MercadoPagoStandard',
+        'sandbox'     => false,
         'active'      => true,
         'sort'        => 1,
     ],
