@@ -17,8 +17,9 @@ Route::group(['middleware' => ['web', 'theme', 'locale', 'currency'], 'prefix' =
          Route::get('success', 'success')->name('mercadopago.standard.success');
          Route::get('failure', 'failure')->name('mercadopago.standard.failure');
          Route::get('pending', 'pending')->name('mercadopago.standard.pending');
-         Route::post('ipn', 'ipn')->name('mercadopago.standard.ipn');
-
+         Route::post('checkout/mercadopago/standard/ipn', [StandardController::class, 'ipn'])
+         ->name('mercadopago.standard.ipn');
+     
     });
 });
 
@@ -33,3 +34,7 @@ Route::group(['middleware' => ['web', 'theme', 'locale', 'currency'], 'prefix' =
 
     });
 });
+
+// Route::post('mercadopago/standard/ipn', [StandardController::class, 'ipn'])
+//     // ->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class)
+//     ->name('mercadopago.standard.ipn');
