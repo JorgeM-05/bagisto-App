@@ -12,6 +12,13 @@ Route::group(['middleware' => ['web', 'theme', 'locale', 'currency'], 'prefix' =
         Route::get('redirect', 'redirect')->name('mercadopago.standard.redirect');
         Route::post('response', 'processPayment')->name('mercadopago.standard.response');
         Route::post('cancel', 'cancelPayment')->name('mercadopago.standard.cancel');
+
+         // ✅ NUEVAS RUTAS PARA EL RETORNO DE MERCADO PAGO
+         Route::get('success', 'success')->name('mercadopago.standard.success');
+         Route::get('failure', 'failure')->name('mercadopago.standard.failure');
+         Route::get('pending', 'pending')->name('mercadopago.standard.pending');
+         Route::post('ipn', 'ipn')->name('mercadopago.standard.ipn');
+
     });
 });
 

@@ -11,7 +11,6 @@ class MercadoPagoServiceProvider extends ServiceProvider
         include __DIR__ . '/../Http/routes.php';
 
         $this->loadTranslationsFrom(__DIR__ . '/../Resources/lang', 'mercadopago');
-        // $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'mercadopago');
         $this->loadViewsFrom(__DIR__.'/../Resources/views', 'mercadopago');
 
         $this->app->register(EventServiceProvider::class);
@@ -32,7 +31,6 @@ class MercadoPagoServiceProvider extends ServiceProvider
      */
     public function registerConfig()
     {
-        // $this->mergeConfigFrom(__DIR__ . '/../Config/system.php', 'core');
         $this->mergeConfigFrom(__DIR__ . '/../Config/paymentmethods.php', 'payment_methods');
     }
 }
